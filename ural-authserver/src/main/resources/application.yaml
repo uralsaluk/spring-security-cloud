@@ -1,0 +1,32 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: authorization-api
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb
+    username: root
+    password: password
+  data:
+    mongodb:
+      user: urals
+      password: test
+      uri: mongodb://localhost:2717/authsec
+
+authorization-api:
+  keyFile: jwtiscool.jks
+  password: jwtiscool
+  alias: jwtiscool
+  providerUrl: http://localhost:8080
+  admin:
+    id: 1234
+    username: admin
+    password: $2a$12$KwhGOUehFkFW76tUwZ70KOPxH0aRZKQOzkHG9Nhxnxu8rtRrDruc2
+    permissions:
+      - create_book
+      - update_book_stock
+      - read_customer_order
+      - read_order_with_date
+      - read_order_by_id
+      - create_order
+      - read_statistics

@@ -1,0 +1,45 @@
+// Get the current authentication details
+Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+// Start a new thread
+Thread t = new Thread(() -> {
+  // Set the authentication details for the new thread
+  SecurityContextHolder.getContext().setAuthentication(auth);
+  
+  // Perform any security-related operations on the new thread
+});
+
+// Start the new thread
+t.start();
+
+
+public class MyTaskExecutor implements TaskExecutor {
+  // The current authentication details
+  private final Authentication auth;
+  
+  public MyTaskExecutor(Authentication auth) {
+    this.auth = auth;
+  }
+  
+  public void execute(Runnable task) {
+    // Set the authentication details for the new thread
+    SecurityContextHolder.getContext().setAuthentication(auth);
+    
+    // Run the task on the new thread
+    task.run();
+  }
+}
+
+
+
+// Get the current authentication details
+Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+// Create a new TaskExecutor with the authentication details
+TaskExecutor taskExecutor = new MyTaskExecutor(auth);
+
+// Use the TaskExecutor to execute a task on a new thread
+taskExecutor.execute(() -> {
+  // Perform any security-related operations on the new thread
+});
+
