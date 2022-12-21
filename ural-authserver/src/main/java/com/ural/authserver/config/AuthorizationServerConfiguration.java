@@ -4,6 +4,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.PasswordLookup;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.ural.authserver.entities.ContextUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,12 +24,17 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.OAuth2TokenType;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.authorization.*;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.ProviderSettings;
 import org.springframework.security.oauth2.server.authorization.config.TokenSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.io.IOException;
@@ -52,10 +58,6 @@ public class AuthorizationServerConfiguration {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-   /* @Autowired
-    private MongoAccessTokenRepository mongoAccessTokenRepository;
-    @Autowired
-    private MongoRefreshTokenRepository mongoRefreshTokenRepository;*/
 
     @Value("${authorization-api.keyFile}")
     private String keyFile;
@@ -73,43 +75,32 @@ public class AuthorizationServerConfiguration {
     private PasswordEncoder passwordEncoder;
 
 
-  /*  @Bean
-    public TokenStore tokenStore() {
-        return new MongoTokenStore(mongoAccessTokenRepository, mongoRefreshTokenRepository);
-    }*/
-
     @Bean
     public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate, RegisteredClientRepository registeredClientRepository) {
 
         JdbcOAuth2AuthorizationService jdbcOAuth2AuthorizationService = new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
-       /* JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper rowMapper = new JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper(registeredClientRepository);
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        ClassLoader classLoader = JdbcOAuth2AuthorizationService.class.getClassLoader();
-        List<Module> securityModules = SecurityJackson2Modules.getModules(classLoader);
-        objectMapper.registerModules(securityModules);
-        objectMapper.registerModule(new OAuth2AuthorizationServerJackson2Module());
-        // You will need to write the Mixin for your class so Jackson can marshall it.
-        objectMapper.addMixIn(UserPrincipal.class, UserPrincipalMixin.class);
-        rowMapper.setObjectMapper(objectMapper);
-        jdbcOAuth2AuthorizationService.setAuthorizationRowMapper(rowMapper);*/
-
+        //jdbcOAuth2AuthorizationService.setAuthorizationRowMapper(new RowMapper(registeredClientRepository));
         return jdbcOAuth2AuthorizationService;
+
 
     }
 
     @Bean
     public OAuth2AuthorizationConsentService auth2AuthorizationConsentService(JdbcTemplate jdbcTemplate, RegisteredClientRepository registeredClientRepository) {
 
-        return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
+        JdbcOAuth2AuthorizationConsentService auth2AuthorizationConsentService = new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
 
+
+        return auth2AuthorizationConsentService;
     }
-
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authServerSecurityFilterChain(HttpSecurity http) throws Exception {
+
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+
+
         return http.userDetailsService(userDetailsService)
                 .formLogin(Customizer.withDefaults()).build();
 
@@ -182,15 +173,60 @@ public class AuthorizationServerConfiguration {
 
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
+
+        System.out.println("ehehe");
+
+
         return context -> {
             if (context.getTokenType().equals(OAuth2TokenType.ACCESS_TOKEN)) {
+
+
                 Authentication principal = context.getPrincipal();
+
+                ContextUser userDetails = (ContextUser) userDetailsService.loadUserByUsername(principal.getName());
+
                 Set<String> authorities = principal.getAuthorities().stream().map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toSet());
-                context.getClaims().claim(ROLES_CLAIM, authorities);
+                context.getClaims().claim(ROLES_CLAIM, authorities)
+                        .claim("firstName", userDetails.getFirstName())
+                        .claim("lastName", userDetails.getLastName())
+                        .claim("TEST", "test");
             }
         };
 
     }
+
+
+      /*  @Bean
+    public TokenStore tokenStore() {
+        return new MongoTokenStore(mongoAccessTokenRepository, mongoRefreshTokenRepository);
+    }*/
+
+
+/*
+    static class RowMapper extends JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper {
+        RowMapper(RegisteredClientRepository registeredClientRepository) {
+            super(registeredClientRepository);
+            getObjectMapper()
+                    //     .addMixIn(UserEntity.class, MemberMixin.class)
+                    .addMixIn(Role.class, RoleMixin.class);
+        }
+    }
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE,
+            isGetterVisibility = JsonAutoDetect.Visibility.NONE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonDeserialize(using = UserDeserializer.class)
+    static class MemberMixin {
+    }
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE,
+            isGetterVisibility = JsonAutoDetect.Visibility.NONE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonDeserialize(using = RoleDeserializer.class)
+    static class RoleMixin {
+    }*/
 
 }

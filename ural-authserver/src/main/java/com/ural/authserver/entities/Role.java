@@ -1,11 +1,17 @@
 package com.ural.authserver.entities;
 
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.security.core.GrantedAuthority;
 
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString
 public class Role implements GrantedAuthority {
 
-    private static final long serialVersionUID = 1L;
     @Id
     private Long id;
     private String name;
