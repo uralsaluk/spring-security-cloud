@@ -15,12 +15,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @EnableWebSecurity
 public class ResourceServerConfig {
 
 
     private static final String ROLES_CLAIM = "roles";
+    private static final String SCOPES_CLAIM = "scope";
 
     @Bean
     public Converter<Jwt, Collection<GrantedAuthority>> jwtToAuthorityConverter() {
@@ -29,9 +31,16 @@ public class ResourceServerConfig {
             @Override
             public Collection<GrantedAuthority> convert(Jwt jwt) {
                 List<String> roles = jwt.getClaimAsStringList(ROLES_CLAIM);
+                List<String> scope = jwt.getClaimAsStringList(SCOPES_CLAIM);
                 if (roles != null) {
-                    return roles.stream().map(eachRole -> new SimpleGrantedAuthority(eachRole))
-                            .collect(Collectors.toList());
+
+                return     Stream.concat(roles.stream().map(eachRole->new SimpleGrantedAuthority(eachRole)),
+                                            scope.stream() .map(eachScope->new SimpleGrantedAuthority(eachScope)))
+                        .collect(Collectors.toList());
+
+
+               /*     return roles.stream().map(eachRole -> new SimpleGrantedAuthority(eachRole)).
+                            .collect(Collectors.toList());*/
                 }
                 return Collections.emptyList();
             }
@@ -49,7 +58,7 @@ public class ResourceServerConfig {
         http
                 .authorizeRequests()
                 .mvcMatchers("/api/**")
-                .access("  hasRole('USER') ")
+                .access("  hasAuthority('read') and  hasRole('USER') ")
                 //.hasAnyRole("USER")
             //
 
