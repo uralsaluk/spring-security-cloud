@@ -29,6 +29,7 @@ public class UserController {
     private PasswordEncoder passwordEncoder;
 
     //TODO IMPLEMENT BUSINESS LOGIC
+    //TODO IMPLEMENT REGISTERED CLIENT ADD METHOD
     @PostMapping("api/v0/auth/register")
     public ResponseEntity<RegistrationResponse> register(@RequestBody RegistrationRequest request) {
 
