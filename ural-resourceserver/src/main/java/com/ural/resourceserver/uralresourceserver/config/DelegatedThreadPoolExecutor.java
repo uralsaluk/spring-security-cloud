@@ -40,8 +40,10 @@ public class DelegatedThreadPoolExecutor extends ThreadPoolExecutor {
             throw new NullPointerException();
         }else {
 
+            SecurityContext context=this.securityContextHolderStrategy.getContext();
+
             DelegatedThreadPoolExecutor.CustomRunnable customRunnable=
-                    new DelegatedThreadPoolExecutor.CustomRunnable(  this.securityContextHolderStrategy,runnable);
+                    new DelegatedThreadPoolExecutor.CustomRunnable( context ,runnable);
 
             super.execute(customRunnable);
         }
@@ -66,8 +68,8 @@ public class DelegatedThreadPoolExecutor extends ThreadPoolExecutor {
         private final SecurityContext sharedContext;
         private final Runnable delegate;
 
-        CustomRunnable(SecurityContextHolderStrategy securityContextHolderStrategy,Runnable delegate) {
-            this.sharedContext = securityContextHolderStrategy.getContext();
+        CustomRunnable(SecurityContext securityContext,Runnable delegate) {
+            this.sharedContext = securityContext;
             this.delegate=delegate;
         }
 
