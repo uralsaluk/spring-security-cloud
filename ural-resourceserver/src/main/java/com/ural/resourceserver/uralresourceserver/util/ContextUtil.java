@@ -1,5 +1,6 @@
 package com.ural.resourceserver.uralresourceserver.util;
 
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -16,6 +17,15 @@ public class ContextUtil {
       return (String) token.getClaims().get("firstname");
 
     }
+
+
+    public static SecurityContext getSecurityContext(){
+
+     return  SecurityContextHolder.getContext();
+
+
+    }
+
 
 
     public static CustomContext getContextUser(){
