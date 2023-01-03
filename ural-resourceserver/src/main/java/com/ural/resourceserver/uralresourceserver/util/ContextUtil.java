@@ -2,6 +2,7 @@ package com.ural.resourceserver.uralresourceserver.util;
 
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.ArrayList;
@@ -23,6 +24,11 @@ public class ContextUtil {
 
      return  SecurityContextHolder.getContext();
 
+    }
+
+    public static SecurityContextHolderStrategy getContextStrategy(){
+
+        return  SecurityContextHolder.getContextHolderStrategy();
 
     }
 

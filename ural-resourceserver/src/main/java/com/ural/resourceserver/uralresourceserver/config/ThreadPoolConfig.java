@@ -3,11 +3,13 @@ package com.ural.resourceserver.uralresourceserver.config;
 
 import com.ural.resourceserver.uralresourceserver.util.ContextUtil;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextHolderStrategy;
 
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -16,7 +18,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @ConfigurationProperties(
-        prefix = "project.application.threadpool"
+        prefix = "ural.application.threadpool"
 )
 @Data
 public class ThreadPoolConfig {
@@ -28,10 +30,12 @@ public class ThreadPoolConfig {
     private Long maxWaitTime;
     private Integer queueSize;
     private Boolean daemonThreads= Boolean.FALSE;
-    private SecurityContext securityContext;
+    private SecurityContextHolderStrategy securityContext;
 
+    @Autowired
     public ThreadPoolConfig() {
-        this.securityContext = ContextUtil.getSecurityContext();
+
+        this.securityContext = ContextUtil.getContextStrategy();
     }
 
     @Bean
